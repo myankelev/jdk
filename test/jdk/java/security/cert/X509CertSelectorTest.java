@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 import static sun.security.x509.GeneralNameInterface.NAME_DIRECTORY;
 
 import java.io.ByteArrayInputStream;
@@ -33,6 +34,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.security.spec.X509EncodedKeySpec;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.Calendar;
 import java.util.Date;
@@ -119,21 +121,21 @@ public class X509CertSelectorTest {
                          80:e8:a6:c6:71
     */
     private static final String testCert =
-            "-----BEGIN CERTIFICATE-----\n" +
-            "MIICLjCCAeygAwIBAgIEON+CuDALBgcqhkjOOAQDBQAwLTELMAkGA1UEBhMCdXMx\n" +
-            "DDAKBgNVBAoTA3N1bjEQMA4GA1UECxMHdGVzdGluZzAeFw0wMDAzMjcxNTQ4MDha\n" +
-            "Fw0wMDA2MjUxNDQ4MDhaMD4xCzAJBgNVBAYTAnVzMQwwCgYDVQQKEwNzdW4xEDAO\n" +
-            "BgNVBAsTB3Rlc3RpbmcxDzANBgNVBAMTBm11bGxhbjAcMBQGByqGSM44BAEwCQIB\n" +
-            "AAIBAAIBAAMEAAIBAKOCASMwggEfMFAGA1UdHgEB/wRGMESgQjBApD4xCzAJBgNV\n" +
-            "BAYTAnVzMQwwCgYDVQQKEwNzdW4xEDAOBgNVBAsTB3Rlc3RpbmcxDzANBgNVBAMT\n" +
-            "Bm11bGxhbjAdBgNVHQ4EFgQUVuiIrp21PyvLoExL4odTBzN3G98wHwYDVR0jBBgw\n" +
-            "FoAUjt2vb+4CEvRh6S/jZBpvcTIlIMAwHgYDVR0RBBcwFYETbXVsbGFuQGVhc3Qu\n" +
-            "c3VuLmNvbTArBgNVHRAEJDAigA8yMDAwMDEwMTA1MDAwMFqBDzIwMDEwMTAxMDUw\n" +
-            "MDAwWjAPBgNVHQ8BAf8EBQMDB4AAMC0GA1UdIAQmMCQwIgYEKoSAADAaMBgGCCsG\n" +
-            "AQUFBwICMAwSClRlc3RpbmcuLi4wCwYHKoZIzjgEAwUAAy8AMCwCFETHNUBdbCh1\n" +
-            "f3Oy+A1ybAlluIEUAhR2efXHNzsNm9twLyCANuOA6KbGcQ==\n" +
-            "-----END CERTIFICATE-----\n" +
-            "";
+        "-----BEGIN CERTIFICATE-----\n" +
+        "MIICLjCCAeygAwIBAgIEON+CuDALBgcqhkjOOAQDBQAwLTELMAkGA1UEBhMCdXMx\n" +
+        "DDAKBgNVBAoTA3N1bjEQMA4GA1UECxMHdGVzdGluZzAeFw0wMDAzMjcxNTQ4MDha\n" +
+        "Fw0wMDA2MjUxNDQ4MDhaMD4xCzAJBgNVBAYTAnVzMQwwCgYDVQQKEwNzdW4xEDAO\n" +
+        "BgNVBAsTB3Rlc3RpbmcxDzANBgNVBAMTBm11bGxhbjAcMBQGByqGSM44BAEwCQIB\n" +
+        "AAIBAAIBAAMEAAIBAKOCASMwggEfMFAGA1UdHgEB/wRGMESgQjBApD4xCzAJBgNV\n" +
+        "BAYTAnVzMQwwCgYDVQQKEwNzdW4xEDAOBgNVBAsTB3Rlc3RpbmcxDzANBgNVBAMT\n" +
+        "Bm11bGxhbjAdBgNVHQ4EFgQUVuiIrp21PyvLoExL4odTBzN3G98wHwYDVR0jBBgw\n" +
+        "FoAUjt2vb+4CEvRh6S/jZBpvcTIlIMAwHgYDVR0RBBcwFYETbXVsbGFuQGVhc3Qu\n" +
+        "c3VuLmNvbTArBgNVHRAEJDAigA8yMDAwMDEwMTA1MDAwMFqBDzIwMDEwMTAxMDUw\n" +
+        "MDAwWjAPBgNVHQ8BAf8EBQMDB4AAMC0GA1UdIAQmMCQwIgYEKoSAADAaMBgGCCsG\n" +
+        "AQUFBwICMAwSClRlc3RpbmcuLi4wCwYHKoZIzjgEAwUAAy8AMCwCFETHNUBdbCh1\n" +
+        "f3Oy+A1ybAlluIEUAhR2efXHNzsNm9twLyCANuOA6KbGcQ==\n" +
+        "-----END CERTIFICATE-----\n" +
+        "";
 
     private static final String testKey =
             "MIIBtjCCASsGByqGSM44BAEwggEeAoGBAIVWPEkcxbxhQRCqVzg55tNqbP5j0K4kdu4bkmXvfqC5\n" +
@@ -156,7 +158,8 @@ public class X509CertSelectorTest {
 
     public X509CertSelectorTest() throws CertificateException, IOException {
         cert = (X509Certificate) CertificateFactory.getInstance("X.509")
-                .generateCertificate(new ByteArrayInputStream(testCert.getBytes()));
+                .generateCertificate(
+                        new ByteArrayInputStream(testCert.getBytes()));
     }
 
     // Runs the test.
@@ -168,7 +171,9 @@ public class X509CertSelectorTest {
         testSubjectKeyIdentifier();
         testAuthorityKeyIdentifier();
         testCertificateValid();
+        testCertificateValidInstant();
         testPrivateKeyValid();
+        testPrivateKeyValidInstant();
         testSubjectPublicKeyAlgID();
         testKeyUsage();
         testSubjectAltName();
@@ -197,8 +202,9 @@ public class X509CertSelectorTest {
         String serialNum = Debug.toString(selector.getSerialNumber());
         String expected = "38:df:82:b8";
         if (!serialNum.equals(expected)) {
-            throw new RuntimeException("Serial number toString format is incorrect. Got: "
-                + serialNum + " Expected: " + expected);
+            throw new RuntimeException(
+                    "Serial number toString format is incorrect. Got: "
+                    + serialNum + " Expected: " + expected);
         }
     }
 
@@ -223,12 +229,13 @@ public class X509CertSelectorTest {
         System.out.println("X.509 Certificate Match on subjectKeyIdentifier");
         // bad match
         X509CertSelector selector = new X509CertSelector();
-        byte[] b = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+        byte[] b = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
         selector.setSubjectKeyIdentifier(b);
         checkMatch(selector, cert, false);
 
         // good match
-        DerInputStream in = new DerInputStream(cert.getExtensionValue("2.5.29.14"));
+        DerInputStream in = new DerInputStream(
+                cert.getExtensionValue("2.5.29.14"));
         byte[] encoded = in.getOctetString();
         selector.setSubjectKeyIdentifier(encoded);
         checkMatch(selector, cert, true);
@@ -242,13 +249,16 @@ public class X509CertSelectorTest {
         System.out.println("X.509 Certificate Match on authorityKeyIdentifier");
         // bad match
         X509CertSelector selector = new X509CertSelector();
-        byte[] b = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-        AuthorityKeyIdentifierExtension a = new AuthorityKeyIdentifierExtension(new KeyIdentifier(b), null, null);
+        byte[] b = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+        AuthorityKeyIdentifierExtension a =
+                new AuthorityKeyIdentifierExtension(
+                        new KeyIdentifier(b), null, null);
         selector.setAuthorityKeyIdentifier(a.getExtensionValue());
         checkMatch(selector, cert, false);
 
         // good match
-        DerInputStream in = new DerInputStream(cert.getExtensionValue("2.5.29.35"));
+        DerInputStream in = new DerInputStream(
+                cert.getExtensionValue("2.5.29.35"));
         byte[] encoded = in.getOctetString();
         selector.setAuthorityKeyIdentifier(encoded);
         checkMatch(selector, cert, true);
@@ -273,10 +283,35 @@ public class X509CertSelectorTest {
     }
 
     /*
+     * Tests matching on the certificate validity component using Instant.
+     */
+    private void testCertificateValidInstant() {
+
+        System.out.println("X.509 Certificate Match on certificateValid"
+                + " (Instant)");
+
+        // bad match
+        final X509CertSelector selector = new X509CertSelector();
+        final Calendar cal = Calendar.getInstance();
+        cal.set(1968, 12, 31);
+        selector.setCertificateValid(cal.getTime().toInstant());
+        checkMatch(selector, cert, false);
+
+        // good match
+        selector.setCertificateValid(cert.getNotBefore().toInstant());
+        checkMatch(selector, cert, true);
+
+        final Instant expected = cert.getNotBefore().toInstant();
+        if (!expected.equals(selector.getCertificateValidInstant()))
+            throw new RuntimeException("getCertificateValidInstant() mismatch");
+    }
+
+    /*
      * Tests matching on the private key validity component contained in the
      * certificate.
      */
-    private void testPrivateKeyValid() throws IOException, CertificateException {
+    private void testPrivateKeyValid()
+            throws IOException, CertificateException {
         System.out.println("X.509 Certificate Match on privateKeyValid");
         // bad match
         X509CertSelector selector = new X509CertSelector();
@@ -286,16 +321,48 @@ public class X509CertSelectorTest {
         checkMatch(selector, cert, false);
 
         // good match
-        DerInputStream in = new DerInputStream(cert.getExtensionValue("2.5.29.16"));
+        DerInputStream in = new DerInputStream(
+                cert.getExtensionValue("2.5.29.16"));
         byte[] encoded = in.getOctetString();
-        PrivateKeyUsageExtension ext = new PrivateKeyUsageExtension(false, encoded);
+        PrivateKeyUsageExtension ext =
+                new PrivateKeyUsageExtension(false, encoded);
         Date validDate = ext.getNotBefore();
         selector.setPrivateKeyValid(validDate);
         checkMatch(selector, cert, true);
 
     }
 
-    private ObjectIdentifier getCertPubKeyAlgOID(X509Certificate xcert) throws IOException {
+    /*
+     * Tests matching on the private key validity component using Instant.
+     */
+    private void testPrivateKeyValidInstant()
+            throws IOException, CertificateException {
+
+        System.out.println("X.509 Certificate Match on privateKeyValid"
+                + " (Instant)");
+        // bad match
+        final X509CertSelector selector = new X509CertSelector();
+        final Calendar cal = Calendar.getInstance();
+        cal.set(1968, 12, 31);
+        selector.setPrivateKeyValid(cal.getTime().toInstant());
+        checkMatch(selector, cert, false);
+
+        // good match
+        final DerInputStream in = new DerInputStream(
+                cert.getExtensionValue("2.5.29.16"));
+        final byte[] encoded = in.getOctetString();
+        final PrivateKeyUsageExtension ext =
+                new PrivateKeyUsageExtension(false, encoded);
+        final Instant validInstant = ext.getNotBefore().toInstant();
+        selector.setPrivateKeyValid(validInstant);
+        checkMatch(selector, cert, true);
+
+        if (!validInstant.equals(selector.getPrivateKeyValidInstant()))
+            throw new RuntimeException("getPrivateKeyValidInstant() mismatch");
+    }
+
+    private ObjectIdentifier getCertPubKeyAlgOID(X509Certificate xcert)
+            throws IOException {
         byte[] encodedKey = xcert.getPublicKey().getEncoded();
         DerValue val = new DerValue(encodedKey);
         if (val.tag != DerValue.tag_Sequence) {
@@ -327,7 +394,8 @@ public class X509CertSelectorTest {
         System.out.println("X.509 Certificate Match on keyUsage");
         // bad match
         X509CertSelector selector = new X509CertSelector();
-        boolean[] keyUsage = { true, false, true, false, true, false, true, false };
+        boolean[] keyUsage = {true, false, true, false,
+                true, false, true, false};
         selector.setKeyUsage(keyUsage);
         System.out.println("Selector = " + selector.toString());
         checkMatch(selector, cert, false);
@@ -353,9 +421,11 @@ public class X509CertSelectorTest {
         checkMatch(selector, cert, false);
 
         // good match
-        DerInputStream in = new DerInputStream(cert.getExtensionValue("2.5.29.17"));
+        DerInputStream in = new DerInputStream(
+                cert.getExtensionValue("2.5.29.17"));
         byte[] encoded = in.getOctetString();
-        SubjectAlternativeNameExtension ext = new SubjectAlternativeNameExtension(false, encoded);
+        SubjectAlternativeNameExtension ext =
+                new SubjectAlternativeNameExtension(false, encoded);
         GeneralNames names = ext.getNames();
         GeneralName name = names.get(0);
         selector.setSubjectAlternativeNames(null);
@@ -386,8 +456,10 @@ public class X509CertSelectorTest {
         checkMatch(selector, cert, false);
 
         // good match
-        DerInputStream in = new DerInputStream(cert.getExtensionValue("2.5.29.32"));
-        CertificatePoliciesExtension ext = new CertificatePoliciesExtension(false, in.getOctetString());
+        DerInputStream in = new DerInputStream(
+                cert.getExtensionValue("2.5.29.32"));
+        CertificatePoliciesExtension ext =
+                new CertificatePoliciesExtension(false, in.getOctetString());
         List<PolicyInformation> policies = ext.getCertPolicies();
         // match on the first policy id
         PolicyInformation policyInfo = (PolicyInformation) policies.get(0);
@@ -405,9 +477,11 @@ public class X509CertSelectorTest {
         System.out.println("X.509 Certificate Match on pathToName");
 
         X509CertSelector selector = null;
-        DerInputStream in = new DerInputStream(cert.getExtensionValue("2.5.29.30"));
+        DerInputStream in = new DerInputStream(
+                cert.getExtensionValue("2.5.29.30"));
         byte[] encoded = in.getOctetString();
-        NameConstraintsExtension ext = new NameConstraintsExtension(false, encoded);
+        NameConstraintsExtension ext =
+                new NameConstraintsExtension(false, encoded);
         GeneralSubtrees permitted = ext.getPermittedSubtrees();
         GeneralSubtrees excluded = ext.getExcludedSubtrees();
 
@@ -417,17 +491,21 @@ public class X509CertSelectorTest {
             while (e.hasNext()) {
                 GeneralSubtree tree = e.next();
                 if (tree.getName().getType() == NAME_DIRECTORY) {
-                    X500Name excludedDN1 = new X500Name(tree.getName().toString());
-                    X500Name excludedDN2 = new X500Name("CN=Bogus, " + tree.getName().toString());
+                    X500Name excludedDN1 =
+                            new X500Name(tree.getName().toString());
+                    X500Name excludedDN2 = new X500Name(
+                            "CN=Bogus, " + tree.getName().toString());
                     DerOutputStream derDN1 = new DerOutputStream();
                     DerOutputStream derDN2 = new DerOutputStream();
                     excludedDN1.encode(derDN1);
                     excludedDN2.encode(derDN2);
                     selector = new X509CertSelector();
-                    selector.addPathToName(NAME_DIRECTORY, derDN1.toByteArray());
+                    selector.addPathToName(
+                            NAME_DIRECTORY, derDN1.toByteArray());
                     checkMatch(selector, cert, false);
                     selector.setPathToNames(null);
-                    selector.addPathToName(NAME_DIRECTORY, derDN2.toByteArray());
+                    selector.addPathToName(
+                            NAME_DIRECTORY, derDN2.toByteArray());
                     checkMatch(selector, cert, false);
                 }
             }
@@ -439,17 +517,21 @@ public class X509CertSelectorTest {
             while (e.hasNext()) {
                 GeneralSubtree tree = e.next();
                 if (tree.getName().getType() == NAME_DIRECTORY) {
-                    X500Name permittedDN1 = new X500Name(tree.getName().toString());
-                    X500Name permittedDN2 = new X500Name("CN=good, " + tree.getName().toString());
+                    X500Name permittedDN1 =
+                            new X500Name(tree.getName().toString());
+                    X500Name permittedDN2 = new X500Name(
+                            "CN=good, " + tree.getName().toString());
                     DerOutputStream derDN1 = new DerOutputStream();
                     DerOutputStream derDN2 = new DerOutputStream();
                     permittedDN1.encode(derDN1);
                     permittedDN2.encode(derDN2);
                     selector = new X509CertSelector();
-                    selector.addPathToName(NAME_DIRECTORY, derDN1.toByteArray());
+                    selector.addPathToName(
+                            NAME_DIRECTORY, derDN1.toByteArray());
                     checkMatch(selector, cert, true);
                     selector.setPathToNames(null);
-                    selector.addPathToName(NAME_DIRECTORY, derDN2.toByteArray());
+                    selector.addPathToName(
+                            NAME_DIRECTORY, derDN2.toByteArray());
                     checkMatch(selector, cert, true);
                 }
             }
@@ -470,7 +552,8 @@ public class X509CertSelectorTest {
     }
 
     // Tests matching on the subject public key contained in the certificate.
-    private void testSubjectPublicKey() throws IOException, GeneralSecurityException {
+    private void testSubjectPublicKey()
+            throws IOException, GeneralSecurityException {
         System.out.println("X.509 Certificate Match on subject public key");
         // bad match
         X509CertSelector selector = new X509CertSelector();
@@ -492,7 +575,8 @@ public class X509CertSelectorTest {
         // bad match
         GeneralSubtrees subjectTree = new GeneralSubtrees();
         subjectTree.add(getGeneralSubtree((X500Name) cert.getSubjectDN()));
-        NameConstraintsExtension ext = new NameConstraintsExtension((GeneralSubtrees) null, subjectTree);
+        NameConstraintsExtension ext = new NameConstraintsExtension(
+                (GeneralSubtrees) null, subjectTree);
         X509CertSelector selector = new X509CertSelector();
         selector.setNameConstraints(ext.getExtensionValue());
         checkMatch(selector, cert, false);
@@ -519,7 +603,8 @@ public class X509CertSelectorTest {
 
     // Tests certificateEquals criterion
     private void testCertificate() {
-        System.out.println("X.509 Certificate Match on certificateEquals criterion");
+        System.out.println(
+                "X.509 Certificate Match on certificateEquals criterion");
 
         X509CertSelector selector = new X509CertSelector();
         // good match
@@ -527,10 +612,12 @@ public class X509CertSelectorTest {
         checkMatch(selector, cert, true);
     }
 
-    private void checkMatch(X509CertSelector selector, X509Certificate cert, boolean match) {
+    private void checkMatch(X509CertSelector selector,
+            X509Certificate cert, boolean match) {
         boolean result = selector.match(cert);
         if (match != result)
-            throw new RuntimeException(selector + " match " + cert + " is " + result + ", but expect " + match);
+            throw new RuntimeException(selector + " match " + cert
+                    + " is " + result + ", but expect " + match);
     }
 
     private static GeneralSubtree getGeneralSubtree(GeneralNameInterface gni) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.security.cert;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.*;
 
 import javax.security.auth.x500.X500Principal;
@@ -85,7 +86,7 @@ public class X509CRLSelector implements CRLSelector {
     private HashSet<X500Principal> issuerX500Principals;
     private BigInteger minCRL;
     private BigInteger maxCRL;
-    private Date dateAndTime;
+    private Instant dateAndTime;
     private X509Certificate certChecking;
     private long skew = 0;
 
@@ -420,18 +421,34 @@ public class X509CRLSelector implements CRLSelector {
      * does not contain a nextUpdate component.
      * If {@code null}, no dateAndTime check will be done.
      * <p>
-     * Note that the {@code Date} supplied here is cloned to protect
-     * against subsequent modifications.
+     * It is recommended to use the {@link #setDateAndTime(Instant)}
+     * method instead.
+     *
+     * @implSpec
+     * The default implementation calls {@link #setDateAndTime(Instant)}.
      *
      * @param dateAndTime the {@code Date} to match against
      *                    (or {@code null})
      * @see #getDateAndTime
      */
     public void setDateAndTime(Date dateAndTime) {
-        if (dateAndTime == null)
-            this.dateAndTime = null;
-        else
-            this.dateAndTime = new Date(dateAndTime.getTime());
+        setDateAndTime(dateAndTime == null ? null : dateAndTime.toInstant());
+    }
+
+    /**
+     * Sets the dateAndTime criterion. The specified instant must be
+     * equal to or later than the value of the thisUpdate component
+     * of the {@code X509CRL} and earlier than the value of the
+     * nextUpdate component. There is no match if the {@code X509CRL}
+     * does not contain a nextUpdate component.
+     * If {@code null}, no dateAndTime check will be done.
+     *
+     * @param dateAndTime the {@code Instant} to match against
+     *                    (or {@code null})
+     * @see #getDateAndTimeInstant
+     */
+    public void setDateAndTime(Instant dateAndTime) {
+        this.dateAndTime = dateAndTime;
         this.skew = 0;
     }
 
@@ -441,7 +458,7 @@ public class X509CRLSelector implements CRLSelector {
      */
     void setDateAndTime(Date dateAndTime, long skew) {
         this.dateAndTime =
-            (dateAndTime == null ? null : new Date(dateAndTime.getTime()));
+                (dateAndTime == null) ? null : dateAndTime.toInstant();
         this.skew = skew;
     }
 
@@ -547,16 +564,33 @@ public class X509CRLSelector implements CRLSelector {
      * {@code X509CRL} does not contain a nextUpdate component.
      * If {@code null}, no dateAndTime check will be done.
      * <p>
-     * Note that the {@code Date} returned is cloned to protect against
-     * subsequent modifications.
+     * It is recommended to use the {@link #getDateAndTimeInstant()}
+     * method instead.
+     *
+     * @implSpec
+     * The default implementation calls {@link #getDateAndTimeInstant()}.
      *
      * @return the {@code Date} to match against (or {@code null})
      * @see #setDateAndTime
      */
     public Date getDateAndTime() {
-        if (dateAndTime == null)
-            return null;
-        return (Date) dateAndTime.clone();
+        final Instant i = getDateAndTimeInstant();
+        return (i == null) ? null : Date.from(i);
+    }
+
+    /**
+     * Returns the dateAndTime criterion. The specified instant must be
+     * equal to or later than the value of the thisUpdate component
+     * of the {@code X509CRL} and earlier than the value of the
+     * nextUpdate component. There is no match if the
+     * {@code X509CRL} does not contain a nextUpdate component.
+     * If {@code null}, no dateAndTime check will be done.
+     *
+     * @return the {@code Instant} to match against (or {@code null})
+     * @see #setDateAndTime(Instant)
+     */
+    public Instant getDateAndTimeInstant() {
+        return dateAndTime;
     }
 
     /**
@@ -613,18 +647,11 @@ public class X509CRLSelector implements CRLSelector {
 
         /* match on issuer name */
         if (issuerNames != null) {
-            X500Principal issuer = xcrl.getIssuerX500Principal();
-            Iterator<X500Principal> i = issuerX500Principals.iterator();
-            boolean found = false;
-            while (!found && i.hasNext()) {
-                if (i.next().equals(issuer)) {
-                    found = true;
-                }
-            }
-            if (!found) {
+            final X500Principal issuer = xcrl.getIssuerX500Principal();
+            if (!issuerX500Principals.contains(issuer)) {
                 if (debug != null) {
                     debug.println("X509CRLSelector.match: issuer DNs "
-                        + "don't match");
+                            + "don't match");
                 }
                 return false;
             }
@@ -632,24 +659,25 @@ public class X509CRLSelector implements CRLSelector {
 
         if ((minCRL != null) || (maxCRL != null)) {
             /* Get CRL number extension from CRL */
-            byte[] crlNumExtVal = xcrl.getExtensionValue(KnownOIDs.CRLNumber.value());
+            final byte[] crlNumExtVal =
+                    xcrl.getExtensionValue(KnownOIDs.CRLNumber.value());
             if (crlNumExtVal == null) {
                 if (debug != null) {
                     debug.println("X509CRLSelector.match: no CRLNumber");
                 }
                 return false;
             }
-            BigInteger crlNum;
+            final BigInteger crlNum;
             try {
-                DerInputStream in = new DerInputStream(crlNumExtVal);
-                byte[] encoded = in.getOctetString();
-                CRLNumberExtension crlNumExt =
-                    new CRLNumberExtension(Boolean.FALSE, encoded);
+                final DerInputStream in = new DerInputStream(crlNumExtVal);
+                final byte[] encoded = in.getOctetString();
+                final CRLNumberExtension crlNumExt =
+                        new CRLNumberExtension(Boolean.FALSE, encoded);
                 crlNum = crlNumExt.getCrlNumber();
             } catch (IOException ex) {
                 if (debug != null) {
                     debug.println("X509CRLSelector.match: exception in "
-                        + "decoding CRL number");
+                            + "decoding CRL number");
                 }
                 return false;
             }
@@ -658,7 +686,8 @@ public class X509CRLSelector implements CRLSelector {
             if (minCRL != null) {
                 if (crlNum.compareTo(minCRL) < 0) {
                     if (debug != null) {
-                        debug.println("X509CRLSelector.match: CRLNumber too small");
+                        debug.println("X509CRLSelector.match: "
+                                + "CRLNumber too small");
                     }
                     return false;
                 }
@@ -668,38 +697,38 @@ public class X509CRLSelector implements CRLSelector {
             if (maxCRL != null) {
                 if (crlNum.compareTo(maxCRL) > 0) {
                     if (debug != null) {
-                        debug.println("X509CRLSelector.match: CRLNumber too large");
+                        debug.println("X509CRLSelector.match: "
+                                + "CRLNumber too large");
                     }
                     return false;
                 }
             }
         }
 
-
         /* match on dateAndTime */
         if (dateAndTime != null) {
-            Date crlThisUpdate = xcrl.getThisUpdate();
-            Date nextUpdate = xcrl.getNextUpdate();
-            if (nextUpdate == null) {
+            final Instant thisUpdate = xcrl.getThisUpdate().toInstant();
+            final Date nextUpdateDate = xcrl.getNextUpdate();
+            if (nextUpdateDate == null) {
                 if (debug != null) {
                     debug.println("X509CRLSelector.match: nextUpdate null");
                 }
                 return false;
             }
-            Date nowPlusSkew = dateAndTime;
-            Date nowMinusSkew = dateAndTime;
-            if (skew > 0) {
-                nowPlusSkew = new Date(dateAndTime.getTime() + skew);
-                nowMinusSkew = new Date(dateAndTime.getTime() - skew);
-            }
+            final Instant nextUpdate = nextUpdateDate.toInstant();
+            final Instant nowPlusSkew = (skew > 0)
+                    ? dateAndTime.plusMillis(skew) : dateAndTime;
+            final Instant nowMinusSkew = (skew > 0)
+                    ? dateAndTime.minusMillis(skew) : dateAndTime;
 
             // Check that the test date is within the validity interval:
             //   [ thisUpdate - MAX_CLOCK_SKEW,
             //     nextUpdate + MAX_CLOCK_SKEW ]
-            if (nowMinusSkew.after(nextUpdate)
-                || nowPlusSkew.before(crlThisUpdate)) {
+            if (nowMinusSkew.isAfter(nextUpdate)
+                    || nowPlusSkew.isBefore(thisUpdate)) {
                 if (debug != null) {
-                    debug.println("X509CRLSelector.match: update out-of-range");
+                    debug.println(
+                            "X509CRLSelector.match: update out-of-range");
                 }
                 return false;
             }

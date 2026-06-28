@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package java.security.cert;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.PublicKey;
+import java.time.Instant;
 import java.util.*;
 import javax.security.auth.x500.X500Principal;
 
@@ -439,18 +440,30 @@ public class X509CertSelector implements CertSelector {
      * {@code X509Certificate}. If {@code null}, no certificateValid
      * check will be done.
      * <p>
-     * Note that the {@code Date} supplied here is cloned to protect
-     * against subsequent modifications.
+     * It is recommended to use the
+     * {@link #setCertificateValid(Instant)} method instead.
+     *
+     * @implSpec
+     * The default implementation calls {@link #setCertificateValid(Instant)}.
      *
      * @param certValid the {@code Date} to check (or {@code null})
      * @see #getCertificateValid
      */
     public void setCertificateValid(Date certValid) {
-        if (certValid == null) {
-            certificateValid = null;
-        } else {
-            certificateValid = (Date)certValid.clone();
-        }
+        setCertificateValid(certValid == null ? null : certValid.toInstant());
+    }
+
+    /**
+     * Sets the certificateValid criterion. The specified instant must fall
+     * within the certificate validity period for the
+     * {@code X509Certificate}. If {@code null}, no certificateValid
+     * check will be done.
+     *
+     * @param certValid the {@code Instant} to check (or {@code null})
+     * @see #getCertificateValidInstant
+     */
+    public void setCertificateValid(Instant certValid) {
+        certificateValid = certValid == null ? null : Date.from(certValid);
     }
 
     /**
@@ -459,19 +472,34 @@ public class X509CertSelector implements CertSelector {
      * {@code X509Certificate}. If {@code null}, no privateKeyValid
      * check will be done.
      * <p>
-     * Note that the {@code Date} supplied here is cloned to protect
-     * against subsequent modifications.
+     * It is recommended to use the
+     * {@link #setPrivateKeyValid(Instant)} method instead.
+     *
+     * @implSpec
+     * The default implementation calls
+     * {@link #setPrivateKeyValid(Instant)}.
      *
      * @param privateKeyValid the {@code Date} to check (or
      *                        {@code null})
      * @see #getPrivateKeyValid
      */
     public void setPrivateKeyValid(Date privateKeyValid) {
-        if (privateKeyValid == null) {
-            this.privateKeyValid = null;
-        } else {
-            this.privateKeyValid = (Date)privateKeyValid.clone();
-        }
+        setPrivateKeyValid(
+                privateKeyValid == null ? null : privateKeyValid.toInstant());
+    }
+
+    /**
+     * Sets the privateKeyValid criterion. The specified instant must fall
+     * within the private key validity period for the
+     * {@code X509Certificate}. If {@code null}, no privateKeyValid
+     * check will be done.
+     *
+     * @param privateKeyValid the {@code Instant} to check (or {@code null})
+     * @see #getPrivateKeyValidInstant
+     */
+    public void setPrivateKeyValid(Instant privateKeyValid) {
+        this.privateKeyValid =
+                (privateKeyValid == null) ? null : Date.from(privateKeyValid);
     }
 
     /**
@@ -1439,6 +1467,19 @@ public class X509CertSelector implements CertSelector {
     }
 
     /**
+     * Returns the certificateValid criterion. The specified instant must fall
+     * within the certificate validity period for the
+     * {@code X509Certificate}. If {@code null}, no certificateValid
+     * check will be done.
+     *
+     * @return the {@code Instant} to check (or {@code null})
+     * @see #setCertificateValid(Instant)
+     */
+    public Instant getCertificateValidInstant() {
+        return certificateValid == null ? null : certificateValid.toInstant();
+    }
+
+    /**
      * Returns the privateKeyValid criterion. The specified date must fall
      * within the private key validity period for the
      * {@code X509Certificate}. If {@code null}, no privateKeyValid
@@ -1455,6 +1496,19 @@ public class X509CertSelector implements CertSelector {
             return null;
         }
         return (Date)privateKeyValid.clone();
+    }
+
+    /**
+     * Returns the privateKeyValid criterion. The specified instant must fall
+     * within the private key validity period for the
+     * {@code X509Certificate}. If {@code null}, no privateKeyValid
+     * check will be done.
+     *
+     * @return the {@code Instant} to check (or {@code null})
+     * @see #setPrivateKeyValid(Instant)
+     */
+    public Instant getPrivateKeyValidInstant() {
+        return privateKeyValid == null ? null : privateKeyValid.toInstant();
     }
 
     /**
